@@ -13,7 +13,7 @@ import org.apache.spark.storage.ShuffleDataBlockId
 import org.apache.spark.util.Utils
 
 import java.io.{File, FileInputStream}
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Paths}
 
 class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
     extends SingleSpillShuffleMapOutputWriter
@@ -24,8 +24,7 @@ class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
   override def transferMapSpillFile(
       mapSpillFile: File,
       partitionLengths: Array[Long],
-      checksums: Array[Long]
-  ): Unit = {
+      checksums: Array[Long]): Unit = {
     val block = ShuffleDataBlockId(shuffleId, mapId, IndexShuffleBlockResolver.NOOP_REDUCE_ID)
 
     if (dispatcher.rootIsLocal) {
@@ -37,7 +36,7 @@ class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
       if (!dispatcher.fs.exists(dir)) {
         dispatcher.fs.mkdirs(dir)
       }
-      Files.move(mapSpillFile.toPath, Path.of(fileDestination))
+      Files.move(mapSpillFile.toPath, Paths.get(fileDestination))
       val timings = System.nanoTime() - now
 
       val bytes = partitionLengths.sum
@@ -48,8 +47,7 @@ class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
       val bw = bytes.toDouble / (t.toDouble / 1000) / (1024 * 1024)
       logInfo(
         s"Statistics: Stage ${sId}.${sAt} TID ${tc.taskAttemptId()} -- " +
-          s"Writing ${block.name} ${bytes} took ${t} ms (${bw} MiB/s)"
-      )
+          s"Writing ${block.name} ${bytes} took ${t} ms (${bw} MiB/s)")
     } else {
       // Copy using a stream.
       val in = new FileInputStream(mapSpillFile)
@@ -62,4 +60,5 @@ class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
     }
     S3ShuffleHelper.writePartitionLengths(shuffleId, mapId, partitionLengths)
   }
+
 }

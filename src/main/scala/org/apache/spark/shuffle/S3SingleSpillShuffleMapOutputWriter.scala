@@ -21,10 +21,7 @@ class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
 
   private lazy val dispatcher = S3ShuffleDispatcher.get
 
-  override def transferMapSpillFile(
-      mapSpillFile: File,
-      partitionLengths: Array[Long],
-      checksums: Array[Long]): Unit = {
+  override def transferMapSpillFile(mapSpillFile: File, partitionLengths: Array[Long], checksums: Array[Long]): Unit = {
     val block = ShuffleDataBlockId(shuffleId, mapId, IndexShuffleBlockResolver.NOOP_REDUCE_ID)
 
     if (dispatcher.rootIsLocal) {
@@ -47,7 +44,8 @@ class S3SingleSpillShuffleMapOutputWriter(shuffleId: Int, mapId: Long)
       val bw = bytes.toDouble / (t.toDouble / 1000) / (1024 * 1024)
       logInfo(
         s"Statistics: Stage ${sId}.${sAt} TID ${tc.taskAttemptId()} -- " +
-          s"Writing ${block.name} ${bytes} took ${t} ms (${bw} MiB/s)")
+          s"Writing ${block.name} ${bytes} took ${t} ms (${bw} MiB/s)"
+      )
     } else {
       // Copy using a stream.
       val in = new FileInputStream(mapSpillFile)

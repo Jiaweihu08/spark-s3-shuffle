@@ -11,3 +11,6 @@ target
 *.class
 *.log
 build.sbt_back
+
+.DS_Store
+.bsp

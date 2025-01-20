@@ -23,29 +23,28 @@
 package org.apache.spark.shuffle.sort
 
 import com.ibm.SparkS3ShuffleBuild
-import org.apache.hadoop.fs.{Path, PathFilter}
 import org.apache.spark._
-import org.apache.spark.internal.{Logging, config}
+import org.apache.spark.internal.Logging
 import org.apache.spark.shuffle._
 import org.apache.spark.shuffle.api.ShuffleExecutorComponents
 import org.apache.spark.shuffle.helper.{S3ShuffleDispatcher, S3ShuffleHelper}
 import org.apache.spark.storage.S3ShuffleReader
 
-import java.io.IOException
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 
 /** This class was adapted from Apache Spark: SortShuffleManager.scala
   */
 private[spark] class S3ShuffleManager(conf: SparkConf) extends ShuffleManager with Logging {
+
   val versionString = s"${SparkS3ShuffleBuild.name}-${SparkS3ShuffleBuild.version} " +
     s"for ${SparkS3ShuffleBuild.sparkVersion}_${SparkS3ShuffleBuild.scalaVersion}"
+
   logInfo(s"Configured S3ShuffleManager (${versionString}).")
   private lazy val dispatcher = S3ShuffleDispatcher.get
-  private lazy val shuffleExecutorComponents = S3ShuffleManager.loadShuffleExecutorComponents(conf)
+
+  private lazy val shuffleExecutorComponents =
+    S3ShuffleManager.loadShuffleExecutorComponents(conf)
 
   /** A mapping from shuffle ids to the task ids of mappers producing output for those shuffles.
     */
@@ -145,7 +144,7 @@ private[spark] class S3ShuffleManager(conf: SparkConf) extends ShuffleManager wi
           shuffleExecutorComponents
         )
       case other: BaseShuffleHandle[K @unchecked, V @unchecked, _] =>
-        new SortShuffleWriter(other, mapId, context, shuffleExecutorComponents)
+        new SortShuffleWriter(other, mapId, context, metrics, shuffleExecutorComponents)
     }
     new S3ShuffleWriter[K, V](writer)
   }
@@ -189,9 +188,11 @@ private[spark] class S3ShuffleManager(conf: SparkConf) extends ShuffleManager wi
     }
     shuffleBlockResolver.stop()
   }
+
 }
 
 private[spark] object S3ShuffleManager {
+
   private def loadShuffleExecutorComponents(conf: SparkConf): ShuffleExecutorComponents = {
     if (conf.get("spark.shuffle.sort.io.plugin.class") != "org.apache.spark.shuffle.S3ShuffleDataIO") {
       throw new RuntimeException(
@@ -203,4 +204,5 @@ private[spark] object S3ShuffleManager {
     executorComponents.initializeExecutor(conf.getAppId, SparkEnv.get.executorId, extraConfigs.asJava)
     executorComponents
   }
+
 }

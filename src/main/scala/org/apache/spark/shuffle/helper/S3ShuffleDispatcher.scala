@@ -36,8 +36,11 @@ class S3ShuffleDispatcher extends Logging {
   val startTime: String = conf.get("spark.app.startTime")
 
   // Required
-  val useSparkShuffleFetch: Boolean = conf.getBoolean("spark.shuffle.s3.useSparkShuffleFetch", defaultValue = false)
+  val useSparkShuffleFetch: Boolean =
+    conf.getBoolean("spark.shuffle.s3.useSparkShuffleFetch", defaultValue = false)
+
   private val fallbackStoragePath_ = conf.get(STORAGE_DECOMMISSION_FALLBACK_STORAGE_PATH)
+
   val fallbackStoragePath = if (fallbackStoragePath_.isEmpty && useSparkShuffleFetch) {
     throw new SparkException(
       s"spark.shuffle.s3.useSparkShuffleFetch is set, but no ${STORAGE_DECOMMISSION_FALLBACK_STORAGE_PATH}"
@@ -45,25 +48,43 @@ class S3ShuffleDispatcher extends Logging {
   } else {
     fallbackStoragePath_.getOrElse(s"${STORAGE_DECOMMISSION_FALLBACK_STORAGE_PATH} is not set.")
   }
+
   private val rootDir_ =
     if (useSparkShuffleFetch) fallbackStoragePath
     else conf.get("spark.shuffle.s3.rootDir", defaultValue = "sparkS3shuffle/")
+
   val rootDir: String = if (rootDir_.endsWith("/")) rootDir_ else rootDir_ + "/"
   val rootIsLocal: Boolean = URI.create(rootDir).getScheme == "file"
 
   // Optional
   val bufferSize: Int = conf.getInt("spark.shuffle.s3.bufferSize", defaultValue = 8 * 1024 * 1024)
-  val maxBufferSizeTask: Int = conf.getInt("spark.shuffle.s3.maxBufferSizeTask", defaultValue = 128 * 1024 * 1024)
-  val maxConcurrencyTask: Int = conf.getInt("spark.shuffle.s3.maxConcurrencyTask", defaultValue = 10)
-  val cachePartitionLengths: Boolean = conf.getBoolean("spark.shuffle.s3.cachePartitionLengths", defaultValue = true)
-  val cacheChecksums: Boolean = conf.getBoolean("spark.shuffle.s3.cacheChecksums", defaultValue = true)
-  val cleanupShuffleFiles: Boolean = conf.getBoolean("spark.shuffle.s3.cleanup", defaultValue = true)
+
+  val maxBufferSizeTask: Int =
+    conf.getInt("spark.shuffle.s3.maxBufferSizeTask", defaultValue = 128 * 1024 * 1024)
+
+  val maxConcurrencyTask: Int =
+    conf.getInt("spark.shuffle.s3.maxConcurrencyTask", defaultValue = 10)
+
+  val cachePartitionLengths: Boolean =
+    conf.getBoolean("spark.shuffle.s3.cachePartitionLengths", defaultValue = true)
+
+  val cacheChecksums: Boolean =
+    conf.getBoolean("spark.shuffle.s3.cacheChecksums", defaultValue = true)
+
+  val cleanupShuffleFiles: Boolean =
+    conf.getBoolean("spark.shuffle.s3.cleanup", defaultValue = true)
+
   val folderPrefixes: Int = conf.getInt("spark.shuffle.s3.folderPrefixes", defaultValue = 10)
 
   // Debug
-  val alwaysCreateIndex: Boolean = conf.getBoolean("spark.shuffle.s3.alwaysCreateIndex", defaultValue = false)
-  val useBlockManager: Boolean = conf.getBoolean("spark.shuffle.s3.useBlockManager", defaultValue = true)
-  val forceBatchFetch: Boolean = conf.getBoolean("spark.shuffle.s3.forceBatchFetch", defaultValue = false)
+  val alwaysCreateIndex: Boolean =
+    conf.getBoolean("spark.shuffle.s3.alwaysCreateIndex", defaultValue = false)
+
+  val useBlockManager: Boolean =
+    conf.getBoolean("spark.shuffle.s3.useBlockManager", defaultValue = true)
+
+  val forceBatchFetch: Boolean =
+    conf.getBoolean("spark.shuffle.s3.forceBatchFetch", defaultValue = false)
 
   // Spark feature
   val checksumAlgorithm: String = SparkEnv.get.conf.get(config.SHUFFLE_CHECKSUM_ALGORITHM)
@@ -229,6 +250,7 @@ class S3ShuffleDispatcher extends Logging {
         case TempLocalBlockId(_)                           => false
         case TempShuffleBlockId(_)                         => false
         case TestBlockId(_)                                => false
+        case _                                             => false
       }
     cachedFileStatus.remove(filter, _)
   }
@@ -241,6 +263,7 @@ class S3ShuffleDispatcher extends Logging {
   def createBlock(blockId: BlockId): FSDataOutputStream = {
     fs.create(getPath(blockId))
   }
+
 }
 
 object S3ShuffleDispatcher extends Logging {
